@@ -1,0 +1,42 @@
+<%- include('layout/index-header') %>
+<body>
+    <div class="container">
+        <section>
+            <div class="overlay">
+    
+            </div>
+            <div class="form-notif" id="form-notif"></div>
+            <div class="signup">
+                <form id="signup-form" method="post" action="/signup">
+                    <div class="header">
+                        <div>Sign Up</div>
+                        <i id="signup-cancel" class="fa-solid fa-xmark"></i>
+                    </div>
+                    <input id="username-signup" name="username" type="text" placeholder="username">
+                    <input id="email-signup" name="email" type="text" placeholder="email" autocomplete="email">
+                    <input id="password-signup" name="password" type="password" placeholder="password" autocomplete="new-password">
+                    <input type="password" id="reenter-password" placeholder="reenter password" autocomplete="new-password">
+                    <input id="signup-btn" class="signup-btn" type="submit" value="Sign Up">
+                </form>
+            </div>
+            <div class="login">
+                <form id="login-form" method="post" action="/login">
+                    <div class="header">
+                        <div>Login</div>
+                        <i id="login-cancel" class="fa-solid fa-xmark"></i>
+                    </div>
+                    <input id="username-login" name="username" type="text" placeholder="username" autocomplete="username">
+                    <input id="password-login" name="password" type="password" placeholder="password" autocomplete="current-password">
+                    <input id="login-btn" class="login-btn" type="submit" value="Login">
+                </form>
+            </div>
+        </section>
+        <div class="greeting">
+            <div>Welcome to<br>My SelfManage</div>
+        </div>
+        <div class="login-signup">
+            <button class="login-btn-show">Login</button>
+            <button class="signup-btn-show">Sign Up</button>
+        </div>
+    </div>
+    <%- include('layout/index-footer') %>
