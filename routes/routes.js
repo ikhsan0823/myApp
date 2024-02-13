@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { upload, Users, Daily, File, Balance, History } = require("../models/users.js");
+const { Users, Daily, File, Balance, History } = require("../models/users.js");
 const router = express.Router();
 
 router.get("/", (req, res) => {
@@ -158,43 +158,6 @@ router.delete("/dailytask/:uniqueId", async (req, res) => {
         console.error("Error deleting task:", error);
         res.status(500).json({ success: false, message: 'Internal Server Error'});
     }
-});
-
-router.post('/upload', (req, res) => {
-    upload(req, res, async (err) => {
-        if (!req.file) {
-            const alertScript = `
-                <script>
-                    alert('No images uploaded!');
-                    window.location.href = '/daily';
-                </script>
-            `;
-            res.send(alertScript);
-            return;
-        }
-
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ success: false, error: "Internal Server Error" });
-        }
-
-        const newFile = new File({
-            username: req.session.user,
-            filename: req.file.filename,
-            path: req.file.path,
-            size: req.file.size,
-            uniqueId: req.body.uniqueId
-        });
-
-        try {
-            await newFile.save();
-            await Daily.findOneAndDelete({ uniqueId: req.body.uniqueId });
-            res.redirect("daily");
-        } catch (error) {
-            console.error('Error saving file info to MongoDB:', error);
-            res.status(500).json({ success: false, error: 'Internal Server Error' });
-        }
-    });
 });
 
 router.get('/getBalance', async (req, res) => {
