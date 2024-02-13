@@ -9,12 +9,8 @@
     "routes": [
       
       {
-        "src": "./routes/(.*)",
-        "dest": "routes.js"
-      },
-      {
-        "src": "./routes/(.*)",
-        "dest": "socketIO.js"
+        "src": "./(.*)",
+        "dest": "main.js"
       }
     ]
   }
