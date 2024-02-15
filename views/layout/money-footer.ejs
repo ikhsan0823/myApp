@@ -1,0 +1,306 @@
+<script>
+    function main(){
+        document.getElementById("barList").style.display = "block";
+        document.getElementById("account-list").style.display = "block";
+    }
+    function hide(){
+        document.getElementById("barList").style.display = "none";
+        document.getElementById("account-list").style.display = "none";
+    }
+
+    function setColor(){
+        document.getElementById("color").style.color = "#cfcfcf";
+    }
+    function unsetColor(){
+        document.getElementById("color").style.color = "#030303";
+    }
+    function setColor1(){
+        document.getElementById("color1").style.color = "#cfcfcf";
+    }
+    function unsetColor1(){
+        document.getElementById("color1").style.color = "#030303";
+    }
+    function setColor2(){
+        document.getElementById("color2").style.color = "#cfcfcf";
+    }
+    function unsetColor2(){
+        document.getElementById("color2").style.color = "#030303";
+    }
+    function setColor3(){
+        document.getElementById("color3").style.color = "#cfcfcf";
+    }
+    function unsetColor3(){
+        document.getElementById("color3").style.color = "#030303";
+    }
+    function setColor4(){
+        document.getElementById("color4").style.color = "#cfcfcf";
+    }
+    function unsetColor4(){
+        document.getElementById("color4").style.color = "#030303";
+    }
+    function setColor5(){
+        document.getElementById("color5").style.color = "#cfcfcf";
+    }
+    function unsetColor5(){
+        document.getElementById("color5").style.color = "#030303";
+    }
+    function setColor6(){
+        document.getElementById("color6").style.color = "#cfcfcf";
+    }
+    function unsetColor6(){
+        document.getElementById("color6").style.color = "#030303";
+    }
+    function setColor7(){
+        document.getElementById("color7").style.color = "#cfcfcf";
+    }
+    function unsetColor7(){
+        document.getElementById("color7").style.color = "#030303";
+    }
+    document.addEventListener('DOMContentLoaded', function (){
+        var depositeInput = document.getElementById('deposite');
+        var depositeButton = document.getElementById('deposit-button');
+        var withdrawInput = document.getElementById('withdraw');
+        var withdrawButton = document.getElementById('withdraw-button');
+        var balanceElement = document.getElementById('balance');
+        var resetButton = document.getElementById('reset-btn');
+        var historyLogElement = document.querySelector('.history-log');
+        var initialBalance = 0;
+        initializeBalance();
+        function updateBalance(amount) {
+            balance += amount;
+            balanceElement.textContent = balance;
+
+            postToServer(balance);
+        }
+        depositeButton.addEventListener('click', function() {
+            var depositeAmount = parseFloat(depositeInput.value);
+            if (!isNaN(depositeAmount) && depositeAmount > 0) {
+                var logElement = document.createElement('div');
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const formattedDate = year + '-' + month + '-' + day;
+                const formattedTime = hours + ':' + minutes;
+                const type = 'Deposite';
+                logElement.className = 'log';
+                logElement.innerHTML = '<div class="date-container"><div class="date-log">' + formattedDate + '</div><div class="time-log">' + formattedTime + '</div></div><div id="text-log" class="text-log">' + type + ' Rp' + depositeAmount +'</div>';
+                historyLogElement.appendChild(logElement);
+                updateBalance(depositeAmount);
+                sendHistoryToServer(formattedDate, formattedTime, type, depositeAmount);
+            }
+            depositeInput.value = '';
+        });
+        withdrawButton.addEventListener('click', function() {
+            var withdrawAmount = parseFloat(withdrawInput.value);
+            if (!isNaN(withdrawAmount) && withdrawAmount > 0 && withdrawAmount <= balance) {
+                var logElement = document.createElement('div');
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const formattedDate = year + '-' + month + '-' + day;
+                const formattedTime = hours + ':' + minutes;
+                const type = 'Withdraw';
+                logElement.className = 'log';
+                logElement.innerHTML = '<div class="date-container"><div class="date-log">' + formattedDate + '</div><div class="time-log">' + formattedTime + '</div></div><div id="text-log" class="text-log">' + type + ' Rp' + withdrawAmount +'</div>';
+                historyLogElement.appendChild(logElement);
+                updateBalance(-withdrawAmount)
+                sendHistoryToServer(formattedDate, formattedTime, type, withdrawAmount);
+            }
+            withdrawInput.value = '';
+        });
+        resetButton.addEventListener('click', function() {
+            balance = initialBalance;
+            balanceElement.textContent = balance;
+            postToServer(balance);
+            var logElement = document.createElement('div');
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const formattedDate = year + '-' + month + '-' + day;
+            const formattedTime = hours + ':' + minutes;
+            const type = 'Reset';
+            logElement.className = 'log';
+            logElement.innerHTML = '<div class="date-container"><div class="date-log">' + formattedDate + '</div><div class="time-log">' + formattedTime + '</div></div><div id="text-log" class="text-log">' + type + '</div>';
+            historyLogElement.appendChild(logElement);
+            sendHistoryToServer(formattedDate, formattedTime, type);
+        });
+    });
+    function cardRemoveFunction() {
+        var logElement = document.querySelectorAll('.log');
+        var confirmation = window.confirm("Are you sure you want to delete all transaction logs?");
+        if (confirmation) {
+            logElement.forEach(function(logElement) {
+                logElement.remove();
+            });
+        }
+    }
+
+    async function getBalance() {
+        try {
+            const response = await fetch('/getBalance', {
+                method: 'GET',
+                credentials: 'include', // Sertakan kredensial (mis., cookie) untuk menggunakan sesi
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal mendapatkan nilai balance');
+            }
+
+            const data = await response.json();
+            return data.value;
+        } catch (error) {
+            console.error('Terjadi kesalahan saat mendapatkan balance:', error);
+            throw error;
+        }
+    }
+
+    async function postToServer(balance) {
+        try {
+            const response = await fetch('/updateBalance', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    balance: balance,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal memperbarui nilai balance');
+            }
+
+            console.log('Berhasil memperbarui balance di server');
+        } catch (error) {
+            console.error('Terjadi kesalahan saat memperbarui balance di server:', error);
+        }
+    }
+
+    async function initializeBalance() {
+        try {
+            // Mendapatkan nilai balance dari server
+            const serverBalance = await getBalance();
+            
+            // Update nilai balance di sisi klien
+            var balanceElement = document.getElementById('balance');
+            balance = serverBalance;
+            balanceElement.textContent = balance;
+        } catch (error) {
+            console.error('Terjadi kesalahan saat inisialisasi balance:', error);
+        }
+    }
+
+    initializeBalance();
+
+    async function sendHistoryToServer(formattedDate, formattedTime, type, depositeAmount, withdrawAmount) {
+        try {
+            const response = await fetch('/history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    formattedDate: formattedDate,
+                    formattedTime: formattedTime,
+                    type: type,
+                    depositeAmount: depositeAmount,
+                    withdrawAmount: withdrawAmount,
+                }),
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                console.log('Server response:', data);
+            } else {
+                console.error('Unexpected response type:', contentType);
+            }
+        } catch (error) {
+            console.error('Error sending data to server:', error);
+
+            if (error instanceof TypeError || error.name === 'TypeError') {
+                console.error('Network error. Unable to fetch data from the server.');
+            } else if (error instanceof SyntaxError || error.name === 'SyntaxError') {
+                console.error('Error parsing JSON from the server response.');
+            } else {
+                console.error('Other error:', error);
+            }
+        }
+    }
+
+    async function getHistory() {
+        try{
+            const response = await fetch('/gethistory', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error retrieving daily tasks: ${response.statusText}');
+            }
+
+            const data = await response.json();
+            return data.getHistory;
+        } catch (error) {
+            console.error('Error:', error);
+            return [];
+        }
+    }
+
+    /*async function displayHistory() {
+        const history = await getHistory();
+
+        const historyLogElement = document.querySelector('.history-log');
+        historyLogElement.innerHTML = '';
+
+        const cards = history
+            .map(history => {
+                var logElement = document.createElement('div');
+                logElement.className = 'log';
+        })
+    }*/
+
+    function confirmLogout() {
+        const logoutConfirmed = window.confirm("Are you sure you want to logout?");
+        if (logoutConfirmed) {
+            fetch("/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = "/";
+                } else {
+                    alert("Logout failed!");
+                }
+            })
+            .catch(error => {
+                console.error("Error during logout:", error);
+                alert("Logout failed");
+            });
+        } else {
+            window.location.href = "/money";
+        }
+    }
+</script>
+</body>
+</html>
