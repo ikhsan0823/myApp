@@ -56,6 +56,7 @@
     function unsetColor7(){
         document.getElementById("color7").style.color = "#030303";
     }
+
     document.addEventListener('DOMContentLoaded', function (){
         var depositeInput = document.getElementById('deposite');
         var depositeButton = document.getElementById('deposit-button');
@@ -84,12 +85,14 @@
                 const minutes = String(d.getMinutes()).padStart(2, '0');
                 const formattedDate = year + '-' + month + '-' + day;
                 const formattedTime = hours + ':' + minutes;
+                const time = formattedDate + 'T' + formattedTime
                 const type = 'Deposite';
                 logElement.className = 'log';
                 logElement.innerHTML = '<div class="date-container"><div class="date-log">' + formattedDate + '</div><div class="time-log">' + formattedTime + '</div></div><div id="text-log" class="text-log">' + type + ' Rp' + depositeAmount +'</div>';
                 historyLogElement.appendChild(logElement);
                 updateBalance(depositeAmount);
-                sendHistoryToServer(formattedDate, formattedTime, type, depositeAmount);
+                const amount = depositeAmount;
+                sendHistoryToServer(formattedDate, formattedTime, type, amount);
             }
             depositeInput.value = '';
         });
@@ -110,7 +113,8 @@
                 logElement.innerHTML = '<div class="date-container"><div class="date-log">' + formattedDate + '</div><div class="time-log">' + formattedTime + '</div></div><div id="text-log" class="text-log">' + type + ' Rp' + withdrawAmount +'</div>';
                 historyLogElement.appendChild(logElement);
                 updateBalance(-withdrawAmount)
-                sendHistoryToServer(formattedDate, formattedTime, type, withdrawAmount);
+                const amount = withdrawAmount;
+                sendHistoryToServer(formattedDate, formattedTime, type, amount);
             }
             withdrawInput.value = '';
         });
@@ -133,147 +137,175 @@
             historyLogElement.appendChild(logElement);
             sendHistoryToServer(formattedDate, formattedTime, type);
         });
-    });
-    function cardRemoveFunction() {
-        var logElement = document.querySelectorAll('.log');
-        var confirmation = window.confirm("Are you sure you want to delete all transaction logs?");
-        if (confirmation) {
-            logElement.forEach(function(logElement) {
-                logElement.remove();
-            });
-        }
-    }
 
-    async function getBalance() {
-        try {
-            const response = await fetch('/getBalance', {
-                method: 'GET',
-                credentials: 'include', // Sertakan kredensial (mis., cookie) untuk menggunakan sesi
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+        async function cardRemoveFunction() {
+            var logElements = document.querySelectorAll('.log');
+            var confirmation = window.confirm("Are you sure you want to delete all transaction logs?");
 
-            if (!response.ok) {
-                throw new Error('Gagal mendapatkan nilai balance');
+            if (confirmation) {
+                logElements.forEach(function (logElement) {
+                    logElement.remove();
+                });
+                try {
+                    const response = await fetch('/history/delete', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Error deleting transaction logs: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    console.log(data.message);
+                } catch (error) {
+                    console.error('Error:', error);
+                }
             }
-
-            const data = await response.json();
-            return data.value;
-        } catch (error) {
-            console.error('Terjadi kesalahan saat mendapatkan balance:', error);
-            throw error;
         }
-    }
 
-    async function postToServer(balance) {
-        try {
-            const response = await fetch('/updateBalance', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    balance: balance,
-                }),
-            });
+        async function getBalance() {
+            try {
+                const response = await fetch('/getBalance', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 
-            if (!response.ok) {
-                throw new Error('Gagal memperbarui nilai balance');
-            }
+                if (!response.ok) {
+                    throw new Error('Gagal mendapatkan nilai balance');
+                }
 
-            console.log('Berhasil memperbarui balance di server');
-        } catch (error) {
-            console.error('Terjadi kesalahan saat memperbarui balance di server:', error);
-        }
-    }
-
-    async function initializeBalance() {
-        try {
-            // Mendapatkan nilai balance dari server
-            const serverBalance = await getBalance();
-            
-            // Update nilai balance di sisi klien
-            var balanceElement = document.getElementById('balance');
-            balance = serverBalance;
-            balanceElement.textContent = balance;
-        } catch (error) {
-            console.error('Terjadi kesalahan saat inisialisasi balance:', error);
-        }
-    }
-
-    initializeBalance();
-
-    async function sendHistoryToServer(formattedDate, formattedTime, type, depositeAmount, withdrawAmount) {
-        try {
-            const response = await fetch('/history', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    formattedDate: formattedDate,
-                    formattedTime: formattedTime,
-                    type: type,
-                    depositeAmount: depositeAmount,
-                    withdrawAmount: withdrawAmount,
-                }),
-            });
-
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
                 const data = await response.json();
-                console.log('Server response:', data);
-            } else {
-                console.error('Unexpected response type:', contentType);
-            }
-        } catch (error) {
-            console.error('Error sending data to server:', error);
-
-            if (error instanceof TypeError || error.name === 'TypeError') {
-                console.error('Network error. Unable to fetch data from the server.');
-            } else if (error instanceof SyntaxError || error.name === 'SyntaxError') {
-                console.error('Error parsing JSON from the server response.');
-            } else {
-                console.error('Other error:', error);
+                return data.value;
+            } catch (error) {
+                console.error('Terjadi kesalahan saat mendapatkan balance:', error);
+                throw error;
             }
         }
-    }
 
-    async function getHistory() {
-        try{
-            const response = await fetch('/gethistory', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            
-            if (!response.ok) {
-                throw new Error('Error retrieving daily tasks: ${response.statusText}');
+        async function postToServer(balance) {
+            try {
+                const response = await fetch('/updateBalance', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        balance: balance,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal memperbarui nilai balance');
+                }
+
+                console.log('Berhasil memperbarui balance di server');
+            } catch (error) {
+                console.error('Terjadi kesalahan saat memperbarui balance di server:', error);
             }
-
-            const data = await response.json();
-            return data.getHistory;
-        } catch (error) {
-            console.error('Error:', error);
-            return [];
         }
-    }
 
-    /*async function displayHistory() {
-        const history = await getHistory();
+        async function initializeBalance() {
+            try {
+                const serverBalance = await getBalance();
+                var balanceElement = document.getElementById('balance');
+                balance = serverBalance;
+                balanceElement.textContent = balance;
+            } catch (error) {
+                console.error('Terjadi kesalahan saat inisialisasi balance:', error);
+            }
+        }
 
-        const historyLogElement = document.querySelector('.history-log');
-        historyLogElement.innerHTML = '';
+        initializeBalance();
 
-        const cards = history
-            .map(history => {
+        async function sendHistoryToServer(formattedDate, formattedTime, type, amount) {
+            try {
+                const response = await fetch('/history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        formattedDate: formattedDate,
+                        formattedTime: formattedTime,
+                        type: type,
+                        amount: amount,
+                    }),
+                });
+
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    console.log('Server response:', data);
+                } else {
+                    console.error('Unexpected response type:', contentType);
+                }
+            } catch (error) {
+                console.error('Error sending data to server:', error);
+
+                if (error instanceof TypeError || error.name === 'TypeError') {
+                    console.error('Network error. Unable to fetch data from the server.');
+                } else if (error instanceof SyntaxError || error.name === 'SyntaxError') {
+                    console.error('Error parsing JSON from the server response.');
+                } else {
+                    console.error('Other error:', error);
+                }
+            }
+        }
+
+        async function getHistory() {
+            try{
+                const response = await fetch('/gethistory', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error retrieving daily tasks: ${response.statusText}');
+                }
+
+                const data = await response.json();
+                return data.getHistory;
+            } catch (error) {
+                console.error('Error:', error);
+                return [];
+            }
+        }
+
+        async function displayHistory() {
+            const history = await getHistory();
+
+            const historyLogElement = document.querySelector('.history-log');
+            historyLogElement.innerHTML = '';
+
+            const cards = history.map(historyItem => {
+                const dateString = historyItem.formattedDate;
+                const type = historyItem.type;
+                const amount = historyItem.amount;
+                const formattedDate = new Date(dateString).toISOString().split('T')[0];
                 var logElement = document.createElement('div');
                 logElement.className = 'log';
-        })
-    }*/
+                if (historyItem.type === 'Reset') {
+                    logElement.innerHTML = `<div class="date-container"><div class="date-log">` + formattedDate + `</div><div class="time-log">${historyItem.formattedTime}</div></div><div id="text-log" class="text-log">Reset</div>`;
+                } else {
+                    logElement.innerHTML = `<div class="date-container"><div class="date-log">` + formattedDate + `</div><div class="time-log">${historyItem.formattedTime}</div></div><div id="text-log" class="text-log">` + type + ' Rp' + amount + `</div>`;
+                }
+                return logElement;
+            });
+            cards.forEach(card => {
+                historyLogElement.appendChild(card);
+            });
+        }
+
+        displayHistory();
+        
+    });
 
     function confirmLogout() {
         const logoutConfirmed = window.confirm("Are you sure you want to logout?");

@@ -1,4 +1,18 @@
 const mongoose = require('mongoose');
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+    destination: '/uploads/',
+    filename: function(req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 1024 * 1024 * 5},
+}).single('myfile');
 
 const usersSchema = {
     username: String,
@@ -8,6 +22,23 @@ const usersSchema = {
         type: Boolean,
         default: false,
     },
+    name: {
+        type: String,
+        default: '',
+    },
+    gender: {
+        type: String,
+        default: '',
+    },
+    phoneNum: {
+        type: String,
+        default: '-',
+    },
+    birth: {
+        type: String,
+        default: '-',
+    },
+    resetToken: String
 };
 const dailySchema = {
     username: String,
@@ -33,8 +64,7 @@ const historySchema = {
     formattedDate: Date,
     formattedTime: String,
     type: String,
-    depositeAmount: Number,
-    withdrawAmount: Number
+    amount: Number
 }
 
 const Users = mongoose.model("Users", usersSchema);
@@ -43,4 +73,4 @@ const File = mongoose.model('File', fileSchema);
 const Balance = mongoose.model('Balance', balanceSchema);
 const History = mongoose.model('History', historySchema);
 
-module.exports = { Users, Daily, File, Balance, History };
+module.exports = { Users, Daily, File, upload, Balance, History };

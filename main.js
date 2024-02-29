@@ -43,6 +43,12 @@ redisClient.on('error', (err) => {
         console.log('Redis connection timed out!');
         return;
     }
+
+    if (err.code === 'ENOTFOUND') {
+        console.log("You're not connected!")
+        return;
+    }
+
     console.error('Redis connection failed:', err);
   });
 

@@ -30,10 +30,10 @@
                 </div>
             </div>
             <div id="account-list" class="sidebar-account">
-                <div onmouseover="setColor5()" onmouseout="unsetColor5()" class="my-list">
+                <a href="/setting"><div onmouseover="setColor5()" onmouseout="unsetColor5()" class="my-list">
                     <i id="color5" id="color" class="fa-solid fa-gear"></i>
                     <div>Setting</div>
-                </div>
+                </div></a>
                 <div onclick="confirmLogout()" onmouseover="setColor6()" onmouseout="unsetColor6()" class="my-list">
                     <i id="color6" id="color" class="fa-solid fa-right-from-bracket"></i>
                     <div>Logout</div>
@@ -84,8 +84,11 @@
                     </div>
                 </div>
                 <div class="history-container">
+                    <div id="trash-can">
+                        <i onclick="cardRemoveFunction()" class="fa-solid fa-trash-can"></i>
+                    </div>
                     <div class="header-history">
-                        <i onclick="cardRemoveFunction()" class="fa-solid fa-clock-rotate-left"></i>
+                        <i class="fa-solid fa-clock-rotate-left"></i>
                         <div class="header-history-text">Transaction History</div>
                     </div>
                     <div class="history-log">

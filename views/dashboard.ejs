@@ -30,10 +30,10 @@
                 </div>
             </div>
             <div id="account-list" class="sidebar-account">
-                <div onmouseover="setColor5()" onmouseout="unsetColor5()" class="my-list">
+                <a href="/setting"><div onmouseover="setColor5()" onmouseout="unsetColor5()" class="my-list">
                     <i id="color5" id="color" class="fa-solid fa-gear"></i>
                     <div>Setting</div>
-                </div>
+                </div></a>
                 <div onclick="confirmLogout()" onmouseover="setColor6()" onmouseout="unsetColor6()" class="my-list">
                     <i id="color6" id="color" class="fa-solid fa-right-from-bracket"></i>
                     <div>Logout</div>
@@ -57,7 +57,7 @@
                     <div>Dashboard</div>
                 </div>
                 <div class="content-list">
-                    <div class="list-card">
+                    <div onclick="myDaily()" class="list-card">
                         <i class="fa-solid fa-calendar-day"></i>
                         <div>My Daily</div>
                     </div>
@@ -69,7 +69,7 @@
                         <i class="fa-solid fa-calendar-days"></i>
                         <div>My Monthly</div>
                     </div>
-                    <div class="list-card">
+                    <div onclick="myMoney()" class="list-card">
                         <i class="fa-solid fa-wallet"></i>
                         <div>My Money</div>
                     </div>

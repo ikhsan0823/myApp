@@ -1,11 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { Users, Daily, File, Balance, History } = require("../models/users.js");
+const nodemailer = require('nodemailer');
+const { Users, Daily, File, upload, Balance, History } = require("../models/users.js");
 const router = express.Router();
 
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
     if (req.session.user || req.session.clientId) {
-        const username = req.session.user;
+        const nameUser = await Users.find({ username: req.session.user })
+        const name = nameUser.name;
+        const username = name || req.session.user;
         res.render("dashboard", { username: username});
         return;
     }
@@ -79,13 +82,20 @@ router.post("/login", async (req, res) => {
     }
 });
 
-router.get("/dashboard", (req, res) => {
+router.get("/forgotpass", async (req, res) => {
+    res.render("forgotpass");
+});
+
+router.get("/dashboard", async (req, res) => {
     if (!req.session.user || !req.session.clientId) {
         res.redirect("/");
         return;
     }
-    const username = req.session.user;
-    res.render("dashboard", { username: username});
+    const nameUser = await Users.findOne({ username: req.session.user })
+    const name = nameUser.name;
+    const username = name || req.session.user;
+    const usernames = req.session.user;
+    res.render("dashboard", { username: username, usernames: usernames });
 });
 
 router.get("/daily", (req, res) => {
@@ -102,6 +112,51 @@ router.get("/money", (req, res) => {
         return;
     }
     res.render('money');
+});
+
+router.get("/setting", async (req, res) => {
+    try {
+        if (!req.session.user || !req.session.clientId) {
+            res.redirect("/");
+            return;
+        }
+
+        const username = req.session.user;
+        const account = await Users.find({ username: username });
+        const accountInfo = account.map((users) => ({
+            name: users.name,
+            email: users.email,
+            gender: users.gender,
+            phoneNum: users.phoneNum,
+            birth: users.birth,
+        }));
+
+        res.render('setting', { username: username, users: accountInfo });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.post("/editProfile", async (req, res) => {
+    try {
+        const { name, email, birth, gender, phoneNum } = req.body;
+        const user = await Users.find({ username: req.session.user });
+
+        await Users.findOneAndUpdate({ username: req.session.user }, {
+            $set: {
+                name: name || user.name,
+                email: email || user.email,
+                birth: birth || user.birth,
+                gender: gender || user.gender,
+                phoneNum: phoneNum || user.phoneNum,
+            }
+        });
+        res.redirect('setting');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Terjadi kesalahan saat memperbarui profil');
+    }
 });
 
 router.post("/dailytask", async (req, res) => {
@@ -167,6 +222,59 @@ router.delete("/dailytask/:uniqueId", async (req, res) => {
     }
 });
 
+router.delete("/history/delete", async (req, res) => {
+    const username = req.session.user;
+    try {
+        const deleteHistory = await History.deleteMany({ username: username });
+
+        if (deleteHistory.deletedCount === 0) {
+            res.status(404).json({ success: false, message: 'History not found' });
+            return;
+        }
+        res.status(200).json({ success: true, message: 'All tasks deleted successfully' });
+    } catch (error) {
+        console.error("Error deleting history:", error);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+});
+
+router.post('/upload', (req, res) => {
+    upload(req, res, async (err) => {
+        if (!req.file) {
+            const alertScript = `
+                <script>
+                    alert('No images uploaded!');
+                    window.location.href = '/daily';
+                </script>
+            `;
+            res.send(alertScript);
+            return;
+        }
+
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, error: "Internal Server Error" });
+        }
+
+        const newFile = new File({
+            username: req.session.user,
+            filename: req.file.filename,
+            path: req.file.path,
+            size: req.file.size,
+            uniqueId: req.body.uniqueId
+        });
+
+        try {
+            await newFile.save();
+            await Daily.findOneAndDelete({ uniqueId: req.body.uniqueId });
+            res.redirect("daily");
+        } catch (error) {
+            console.error('Error saving file info to MongoDB:', error);
+            res.status(500).json({ success: false, error: 'Internal Server Error' });
+        }
+    });
+});
+
 router.get('/getBalance', async (req, res) => {
     if (!req.session.user || !req.session.clientId) {
         res.redirect("/");
@@ -204,13 +312,17 @@ router.post("/history", async (req, res) => {
         return res.redirect("/");
     }
     try {
+        const currentHistory = await History.find({ username: req.session.user });
+        if (currentHistory.length >= 10) {
+            const oldestHistory = currentHistory.shift();
+            await History.findByIdAndDelete(oldestHistory._id);
+        };
         let newHistory = new History({
             username: req.session.user,
             formattedDate: req.body.formattedDate,
             formattedTime: req.body.formattedTime,
             type: req.body.type,
-            depositeAmount: req.body.depositeAmount,
-            withdrawAmount: req.body.withdrawAmount
+            amount: req.body.amount
         });
 
         await newHistory.save();
@@ -234,8 +346,7 @@ router.get("/gethistory", async (req, res) => {
             formattedDate: history.formattedDate,
             formattedTime: history.formattedTime,
             type: history.type,
-            depositeAmount: history.depositeAmount,
-            withdrawAmount: history.withdrawAmount
+            amount: history.amount
         }));
 
         res.json({ getHistory: formattedHistory });
@@ -245,6 +356,69 @@ router.get("/gethistory", async (req, res) => {
     }
 });
 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'thisistips919@gmail.com',
+        pass: 'qwtmgtvljuobrxks'
+    }
+});
+
+const generateToken = () => {
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    return token;
+  };  
+
+router.post('/forgot-password', async (req, res) => {
+    try {
+      const { emailpass } = req.body;
+      const user = await Users.findOne({ email: emailpass });
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      const resetToken = generateToken();
+      user.resetToken = resetToken;
+      await user.save();
+  
+      const mailOptions = {
+        from: 'thisistips919@gmail.com',
+        to: emailpass,
+        subject: 'Password Reset',
+        text: `Your token is ${resetToken}`
+      };
+  
+      await transporter.sendMail(mailOptions);
+  
+      res.status(200).json({ message: 'Password reset email sent' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).json({ message: 'Error sending email' });
+    }
+});
+  
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        const user = await Users.findOne({ resetToken: token });
+        if (!user) {
+            return res.status(404).json({ message: 'Invalid or expired token' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.resetToken = undefined;
+        await user.save();
+        
+        res.status(200).json({ message: 'Password successfully reset' });
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        res.status(500).json({ message: 'Error resetting password' });
+    }
+});
+  
 router.post("/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {

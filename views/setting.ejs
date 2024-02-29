@@ -1,0 +1,146 @@
+<%- include('layout/setting-header') %>
+<body>
+    <div class="container">
+        <div onmouseover="main()" onmouseout="hide()" class="sidebar">
+            <i class="fa-solid fa-bars"></i>
+            <div id="barList" class="sidebar-list">
+                <a href="/dashboard"><div onmouseover="setColor7()" onmouseout="unsetColor7()" class="my-list">
+                    <i id="color7" class="fa-solid fa-table-columns"></i>
+                    <div>Dashboard</div>
+                </div></a>
+                <a href="/daily"><div onmouseover="setColor()" onmouseout="unsetColor()" class="my-list">
+                    <i id="color" class="fa-solid fa-calendar-day"></i>
+                    <div>My Daily</div>
+                </div></a>
+                <div onmouseover="setColor1()" onmouseout="unsetColor1()" class="my-list">
+                    <i id="color1" id="color" class="fa-solid fa-calendar-week"></i>
+                    <div>My Weekly</div>
+                </div>
+                <div onmouseover="setColor2()" onmouseout="unsetColor2()" class="my-list">
+                    <i id="color2" id="color" class="fa-solid fa-calendar-days"></i>
+                    <div>My Monthly</div>
+                </div>
+                <a href="/money"><div onmouseover="setColor3()" onmouseout="unsetColor3()" class="my-list">
+                    <i id="color3" id="color" class="fa-solid fa-wallet"></i>
+                    <div>My Money</div>
+                </div></a>
+                <div onmouseover="setColor4()" onmouseout="unsetColor4()" class="my-list">
+                    <i id="color4" id="color" class="fa-solid fa-gift"></i>
+                    <div>My Reward</div>
+                </div>
+            </div>
+            <div id="account-list" class="sidebar-account">
+                <a href="/setting"><div onmouseover="setColor5()" onmouseout="unsetColor5()" class="my-list">
+                    <i id="color5" id="color" class="fa-solid fa-gear"></i>
+                    <div>Setting</div>
+                </div></a>
+                <div onclick="confirmLogout()" onmouseover="setColor6()" onmouseout="unsetColor6()" class="my-list">
+                    <i id="color6" id="color" class="fa-solid fa-right-from-bracket"></i>
+                    <div>Logout</div>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="header">
+                <div class="header-left">
+                    <i id="color" class="fa-solid fa-gear"></i>
+                    <div>Setting</div>
+                </div>
+            </div>
+            <div class="content-container">
+                <div class="account-setting">
+                    <div class="header-account">
+                        <div>Profile</div>
+                    </div>
+                    <div class="content-account">
+                        <div class="title-account">
+                            <div>Name</div>
+                            <div>Username</div>
+                            <div>Email</div>
+                            <div>Date of Birth</div>
+                            <div>Gender</div>
+                            <div>Phone Number</div>
+                        </div>
+                        <div class="desc-account">
+                            <% users.forEach(function(user) { %>
+                                <div class="name"><%= user.name ? user.name : '-' %></div>
+                                <div><%= username %></div>
+                                <div><%= user.email ? user.email : '-' %></div>
+                                <div><%= user.birth ? user.birth : '-' %></div>
+                                <div class="gender"><%= user.gender ? user.gender : '-' %></div>
+                                <div><%= user.phoneNum ? user.phoneNum : '-' %></div>
+                            <% }); %>
+                        </div>                        
+                    </div>
+                    <section>
+                        <div class="edit-form">
+                            <form action="/editProfile" method="POST">
+                            <% users.forEach(function(user) { %>
+                                <div class="close-item">
+                                    <i id="close-item" onclick="myCloseFunction()" class="fa-solid fa-xmark"></i>
+                                </div>
+                                <div>
+                                    <label for="name">Name</label>
+                                    <input type="text" id="name" name="name" value="<%= user.name %>">
+                                </div>
+                                <div>
+                                    <label for="email">Email</label>
+                                    <input type="email" id="email" name="email" value="<%= user.email %>">
+                                </div>
+                                <div>
+                                    <label for="birth">Date of Birth (dd/mm/yyyy)</label>
+                                    <input type="text" id="birth" name="birth" value="<%= user.birth %>">
+                                </div>
+                                <div>
+                                    <label for="gender">Gender</label>
+                                    <select name="gender" id="gender">
+                                        <option value="male" <%= user.gender === 'male' ? 'selected' : '' %>>Male</option>
+                                        <option value="female" <%= user.gender === 'female' ? 'selected' : '' %>>Female</option>
+                                        <option value="other" <%= user.gender === 'other' ? 'selected' : '' %>>Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="phone">Phone Number</label>
+                                    <input type="text" id="phone" name="phoneNum" value="<%= user.phoneNum %>">
+                                </div>
+                                <input type="hidden" name="username" value="<%= username %>">
+                                <button type="submit">Save Change</button>
+                            <% }); %>
+                            </form>
+                        </div>
+                        <div class="reset-form">
+                            <form action="" id="resetForm">
+                            <% users.forEach(function(user) { %>
+                                <div class="close-item-rf">
+                                    <i id="close-item-rf" onclick="myCloseFunctions()" class="fa-solid fa-xmark"></i>
+                                </div>
+                                <div>
+                                    <div id="emailText">Please click "Get Token" first!<br>We will send an email to your email. Enter the token below to complete setting your new password.</div>
+                                    <label for="emailpass">Email</label>
+                                    <input type="email" id="emailpass" name="emailpass" readonly value="<%= user.email %>">
+                                </div>
+                                <button id="get-token-btn" type="button" onclick="sendResetEmail()">Get Token</button>
+                                <div>
+                                    <label for="token">Token</label>
+                                    <input type="text" id="token" name="token" required>
+                                </div>
+                                <div>
+                                    <label for="newPassword">New Password</label>
+                                    <input type="password" id="newPassword" name="newPassword" required>
+                                </div>
+                                <button type="button" onclick="resetPassword()">Reset Password</button>
+                            <% }); %>
+                            </form>
+                        </div>
+                        <span class="overlay"></span>
+                    </section>
+                </div>
+                <div class="edit-account">
+                    <button class="edit-profile">Edit<br>Profile</button>
+                    <button class="change-password">Change<br>Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include('layout/setting-footer') %>
+    
